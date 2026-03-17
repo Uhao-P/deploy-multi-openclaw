@@ -1,0 +1,1559 @@
+# OpenClaw Multi-Instance Docker Deployment (A–Z, 26 instances)
+#
+# Port scheme: Instance N → Gateway 40N00, Bridge 40N01
+# All ports in range 40100–42601 (well within 1–65535).
+#
+# Usage:
+#   cp .env.example .env   # edit tokens and settings
+#   bash setup.sh           # init dirs, fix perms, seed configs
+#   docker compose up -d    # start all instances
+
+x-openclaw-common: &openclaw-common
+  image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+  init: true
+  restart: unless-stopped
+
+x-openclaw-env: &openclaw-env
+  HOME: /home/node
+  TERM: xterm-256color
+
+x-healthcheck: &healthcheck
+  interval: 30s
+  timeout: 5s
+  retries: 5
+  start_period: 20s
+
+services:
+  # ============================================================
+  # Instance A — ports 40100/40101
+  # ============================================================
+  openclaw-a:
+    <<: *openclaw-common
+    container_name: openclaw-a
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_A_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_A_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_A_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_A_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_A_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_A_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_A_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/a/config:/home/node/.openclaw
+      - ./instances/a/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_A_GATEWAY_PORT:-40100}:18789"
+      - "${OPENCLAW_A_BRIDGE_PORT:-40101}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_A_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-a-cli:
+    <<: *openclaw-common
+    container_name: openclaw-a-cli
+    network_mode: "service:openclaw-a"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_A_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/a/config:/home/node/.openclaw
+      - ./instances/a/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-a:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance B — ports 40200/40201
+  # ============================================================
+  openclaw-b:
+    <<: *openclaw-common
+    container_name: openclaw-b
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_B_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_B_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_B_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_B_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_B_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_B_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_B_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/b/config:/home/node/.openclaw
+      - ./instances/b/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_B_GATEWAY_PORT:-40200}:18789"
+      - "${OPENCLAW_B_BRIDGE_PORT:-40201}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_B_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-b-cli:
+    <<: *openclaw-common
+    container_name: openclaw-b-cli
+    network_mode: "service:openclaw-b"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_B_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/b/config:/home/node/.openclaw
+      - ./instances/b/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-b:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance C — ports 40300/40301
+  # ============================================================
+  openclaw-c:
+    <<: *openclaw-common
+    container_name: openclaw-c
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_C_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_C_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_C_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_C_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_C_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_C_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_C_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/c/config:/home/node/.openclaw
+      - ./instances/c/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_C_GATEWAY_PORT:-40300}:18789"
+      - "${OPENCLAW_C_BRIDGE_PORT:-40301}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_C_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-c-cli:
+    <<: *openclaw-common
+    container_name: openclaw-c-cli
+    network_mode: "service:openclaw-c"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_C_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/c/config:/home/node/.openclaw
+      - ./instances/c/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-c:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance D — ports 40400/40401
+  # ============================================================
+  openclaw-d:
+    <<: *openclaw-common
+    container_name: openclaw-d
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_D_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_D_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_D_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_D_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_D_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_D_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_D_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/d/config:/home/node/.openclaw
+      - ./instances/d/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_D_GATEWAY_PORT:-40400}:18789"
+      - "${OPENCLAW_D_BRIDGE_PORT:-40401}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_D_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-d-cli:
+    <<: *openclaw-common
+    container_name: openclaw-d-cli
+    network_mode: "service:openclaw-d"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_D_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/d/config:/home/node/.openclaw
+      - ./instances/d/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-d:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance E — ports 40500/40501
+  # ============================================================
+  openclaw-e:
+    <<: *openclaw-common
+    container_name: openclaw-e
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_E_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_E_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_E_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_E_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_E_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_E_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_E_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/e/config:/home/node/.openclaw
+      - ./instances/e/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_E_GATEWAY_PORT:-40500}:18789"
+      - "${OPENCLAW_E_BRIDGE_PORT:-40501}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_E_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-e-cli:
+    <<: *openclaw-common
+    container_name: openclaw-e-cli
+    network_mode: "service:openclaw-e"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_E_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/e/config:/home/node/.openclaw
+      - ./instances/e/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-e:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance F — ports 40600/40601
+  # ============================================================
+  openclaw-f:
+    <<: *openclaw-common
+    container_name: openclaw-f
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_F_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_F_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_F_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_F_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_F_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_F_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_F_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/f/config:/home/node/.openclaw
+      - ./instances/f/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_F_GATEWAY_PORT:-40600}:18789"
+      - "${OPENCLAW_F_BRIDGE_PORT:-40601}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_F_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-f-cli:
+    <<: *openclaw-common
+    container_name: openclaw-f-cli
+    network_mode: "service:openclaw-f"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_F_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/f/config:/home/node/.openclaw
+      - ./instances/f/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-f:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance G — ports 40700/40701
+  # ============================================================
+  openclaw-g:
+    <<: *openclaw-common
+    container_name: openclaw-g
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_G_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_G_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_G_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_G_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_G_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_G_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_G_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/g/config:/home/node/.openclaw
+      - ./instances/g/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_G_GATEWAY_PORT:-40700}:18789"
+      - "${OPENCLAW_G_BRIDGE_PORT:-40701}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_G_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-g-cli:
+    <<: *openclaw-common
+    container_name: openclaw-g-cli
+    network_mode: "service:openclaw-g"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_G_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/g/config:/home/node/.openclaw
+      - ./instances/g/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-g:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance H — ports 40800/40801
+  # ============================================================
+  openclaw-h:
+    <<: *openclaw-common
+    container_name: openclaw-h
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_H_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_H_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_H_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_H_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_H_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_H_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_H_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/h/config:/home/node/.openclaw
+      - ./instances/h/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_H_GATEWAY_PORT:-40800}:18789"
+      - "${OPENCLAW_H_BRIDGE_PORT:-40801}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_H_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-h-cli:
+    <<: *openclaw-common
+    container_name: openclaw-h-cli
+    network_mode: "service:openclaw-h"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_H_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/h/config:/home/node/.openclaw
+      - ./instances/h/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-h:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance I — ports 40900/40901
+  # ============================================================
+  openclaw-i:
+    <<: *openclaw-common
+    container_name: openclaw-i
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_I_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_I_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_I_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_I_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_I_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_I_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_I_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/i/config:/home/node/.openclaw
+      - ./instances/i/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_I_GATEWAY_PORT:-40900}:18789"
+      - "${OPENCLAW_I_BRIDGE_PORT:-40901}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_I_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-i-cli:
+    <<: *openclaw-common
+    container_name: openclaw-i-cli
+    network_mode: "service:openclaw-i"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_I_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/i/config:/home/node/.openclaw
+      - ./instances/i/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-i:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance J — ports 41000/41001
+  # ============================================================
+  openclaw-j:
+    <<: *openclaw-common
+    container_name: openclaw-j
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_J_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_J_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_J_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_J_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_J_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_J_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_J_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/j/config:/home/node/.openclaw
+      - ./instances/j/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_J_GATEWAY_PORT:-41000}:18789"
+      - "${OPENCLAW_J_BRIDGE_PORT:-41001}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_J_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-j-cli:
+    <<: *openclaw-common
+    container_name: openclaw-j-cli
+    network_mode: "service:openclaw-j"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_J_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/j/config:/home/node/.openclaw
+      - ./instances/j/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-j:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance K — ports 41100/41101
+  # ============================================================
+  openclaw-k:
+    <<: *openclaw-common
+    container_name: openclaw-k
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_K_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_K_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_K_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_K_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_K_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_K_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_K_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/k/config:/home/node/.openclaw
+      - ./instances/k/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_K_GATEWAY_PORT:-41100}:18789"
+      - "${OPENCLAW_K_BRIDGE_PORT:-41101}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_K_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-k-cli:
+    <<: *openclaw-common
+    container_name: openclaw-k-cli
+    network_mode: "service:openclaw-k"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_K_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/k/config:/home/node/.openclaw
+      - ./instances/k/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-k:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance L — ports 41200/41201
+  # ============================================================
+  openclaw-l:
+    <<: *openclaw-common
+    container_name: openclaw-l
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_L_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_L_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_L_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_L_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_L_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_L_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_L_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/l/config:/home/node/.openclaw
+      - ./instances/l/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_L_GATEWAY_PORT:-41200}:18789"
+      - "${OPENCLAW_L_BRIDGE_PORT:-41201}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_L_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-l-cli:
+    <<: *openclaw-common
+    container_name: openclaw-l-cli
+    network_mode: "service:openclaw-l"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_L_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/l/config:/home/node/.openclaw
+      - ./instances/l/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-l:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance M — ports 41300/41301
+  # ============================================================
+  openclaw-m:
+    <<: *openclaw-common
+    container_name: openclaw-m
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_M_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_M_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_M_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_M_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_M_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_M_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_M_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/m/config:/home/node/.openclaw
+      - ./instances/m/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_M_GATEWAY_PORT:-41300}:18789"
+      - "${OPENCLAW_M_BRIDGE_PORT:-41301}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_M_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-m-cli:
+    <<: *openclaw-common
+    container_name: openclaw-m-cli
+    network_mode: "service:openclaw-m"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_M_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/m/config:/home/node/.openclaw
+      - ./instances/m/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-m:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance N — ports 41400/41401
+  # ============================================================
+  openclaw-n:
+    <<: *openclaw-common
+    container_name: openclaw-n
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_N_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_N_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_N_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_N_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_N_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_N_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_N_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/n/config:/home/node/.openclaw
+      - ./instances/n/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_N_GATEWAY_PORT:-41400}:18789"
+      - "${OPENCLAW_N_BRIDGE_PORT:-41401}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_N_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-n-cli:
+    <<: *openclaw-common
+    container_name: openclaw-n-cli
+    network_mode: "service:openclaw-n"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_N_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/n/config:/home/node/.openclaw
+      - ./instances/n/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-n:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance O — ports 41500/41501
+  # ============================================================
+  openclaw-o:
+    <<: *openclaw-common
+    container_name: openclaw-o
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_O_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_O_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_O_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_O_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_O_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_O_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_O_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/o/config:/home/node/.openclaw
+      - ./instances/o/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_O_GATEWAY_PORT:-41500}:18789"
+      - "${OPENCLAW_O_BRIDGE_PORT:-41501}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_O_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-o-cli:
+    <<: *openclaw-common
+    container_name: openclaw-o-cli
+    network_mode: "service:openclaw-o"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_O_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/o/config:/home/node/.openclaw
+      - ./instances/o/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-o:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance P — ports 41600/41601
+  # ============================================================
+  openclaw-p:
+    <<: *openclaw-common
+    container_name: openclaw-p
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_P_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_P_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_P_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_P_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_P_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_P_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_P_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/p/config:/home/node/.openclaw
+      - ./instances/p/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_P_GATEWAY_PORT:-41600}:18789"
+      - "${OPENCLAW_P_BRIDGE_PORT:-41601}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_P_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-p-cli:
+    <<: *openclaw-common
+    container_name: openclaw-p-cli
+    network_mode: "service:openclaw-p"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_P_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/p/config:/home/node/.openclaw
+      - ./instances/p/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-p:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance Q — ports 41700/41701
+  # ============================================================
+  openclaw-q:
+    <<: *openclaw-common
+    container_name: openclaw-q
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_Q_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_Q_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_Q_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_Q_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_Q_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_Q_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_Q_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/q/config:/home/node/.openclaw
+      - ./instances/q/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_Q_GATEWAY_PORT:-41700}:18789"
+      - "${OPENCLAW_Q_BRIDGE_PORT:-41701}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_Q_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-q-cli:
+    <<: *openclaw-common
+    container_name: openclaw-q-cli
+    network_mode: "service:openclaw-q"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_Q_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/q/config:/home/node/.openclaw
+      - ./instances/q/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-q:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance R — ports 41800/41801
+  # ============================================================
+  openclaw-r:
+    <<: *openclaw-common
+    container_name: openclaw-r
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_R_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_R_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_R_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_R_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_R_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_R_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_R_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/r/config:/home/node/.openclaw
+      - ./instances/r/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_R_GATEWAY_PORT:-41800}:18789"
+      - "${OPENCLAW_R_BRIDGE_PORT:-41801}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_R_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-r-cli:
+    <<: *openclaw-common
+    container_name: openclaw-r-cli
+    network_mode: "service:openclaw-r"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_R_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/r/config:/home/node/.openclaw
+      - ./instances/r/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-r:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance S — ports 41900/41901
+  # ============================================================
+  openclaw-s:
+    <<: *openclaw-common
+    container_name: openclaw-s
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_S_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_S_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_S_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_S_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_S_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_S_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_S_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/s/config:/home/node/.openclaw
+      - ./instances/s/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_S_GATEWAY_PORT:-41900}:18789"
+      - "${OPENCLAW_S_BRIDGE_PORT:-41901}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_S_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-s-cli:
+    <<: *openclaw-common
+    container_name: openclaw-s-cli
+    network_mode: "service:openclaw-s"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_S_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/s/config:/home/node/.openclaw
+      - ./instances/s/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-s:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance T — ports 42000/42001
+  # ============================================================
+  openclaw-t:
+    <<: *openclaw-common
+    container_name: openclaw-t
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_T_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_T_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_T_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_T_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_T_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_T_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_T_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/t/config:/home/node/.openclaw
+      - ./instances/t/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_T_GATEWAY_PORT:-42000}:18789"
+      - "${OPENCLAW_T_BRIDGE_PORT:-42001}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_T_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-t-cli:
+    <<: *openclaw-common
+    container_name: openclaw-t-cli
+    network_mode: "service:openclaw-t"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_T_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/t/config:/home/node/.openclaw
+      - ./instances/t/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-t:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance U — ports 42100/42101
+  # ============================================================
+  openclaw-u:
+    <<: *openclaw-common
+    container_name: openclaw-u
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_U_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_U_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_U_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_U_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_U_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_U_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_U_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/u/config:/home/node/.openclaw
+      - ./instances/u/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_U_GATEWAY_PORT:-42100}:18789"
+      - "${OPENCLAW_U_BRIDGE_PORT:-42101}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_U_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-u-cli:
+    <<: *openclaw-common
+    container_name: openclaw-u-cli
+    network_mode: "service:openclaw-u"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_U_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/u/config:/home/node/.openclaw
+      - ./instances/u/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-u:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance V — ports 42200/42201
+  # ============================================================
+  openclaw-v:
+    <<: *openclaw-common
+    container_name: openclaw-v
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_V_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_V_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_V_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_V_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_V_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_V_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_V_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/v/config:/home/node/.openclaw
+      - ./instances/v/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_V_GATEWAY_PORT:-42200}:18789"
+      - "${OPENCLAW_V_BRIDGE_PORT:-42201}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_V_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-v-cli:
+    <<: *openclaw-common
+    container_name: openclaw-v-cli
+    network_mode: "service:openclaw-v"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_V_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/v/config:/home/node/.openclaw
+      - ./instances/v/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-v:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance W — ports 42300/42301
+  # ============================================================
+  openclaw-w:
+    <<: *openclaw-common
+    container_name: openclaw-w
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_W_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_W_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_W_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_W_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_W_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_W_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_W_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/w/config:/home/node/.openclaw
+      - ./instances/w/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_W_GATEWAY_PORT:-42300}:18789"
+      - "${OPENCLAW_W_BRIDGE_PORT:-42301}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_W_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-w-cli:
+    <<: *openclaw-common
+    container_name: openclaw-w-cli
+    network_mode: "service:openclaw-w"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_W_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/w/config:/home/node/.openclaw
+      - ./instances/w/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-w:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance X — ports 42400/42401
+  # ============================================================
+  openclaw-x:
+    <<: *openclaw-common
+    container_name: openclaw-x
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_X_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_X_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_X_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_X_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_X_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_X_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_X_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/x/config:/home/node/.openclaw
+      - ./instances/x/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_X_GATEWAY_PORT:-42400}:18789"
+      - "${OPENCLAW_X_BRIDGE_PORT:-42401}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_X_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-x-cli:
+    <<: *openclaw-common
+    container_name: openclaw-x-cli
+    network_mode: "service:openclaw-x"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_X_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/x/config:/home/node/.openclaw
+      - ./instances/x/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-x:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance Y — ports 42500/42501
+  # ============================================================
+  openclaw-y:
+    <<: *openclaw-common
+    container_name: openclaw-y
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_Y_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_Y_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_Y_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_Y_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_Y_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_Y_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_Y_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/y/config:/home/node/.openclaw
+      - ./instances/y/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_Y_GATEWAY_PORT:-42500}:18789"
+      - "${OPENCLAW_Y_BRIDGE_PORT:-42501}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_Y_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-y-cli:
+    <<: *openclaw-common
+    container_name: openclaw-y-cli
+    network_mode: "service:openclaw-y"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_Y_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/y/config:/home/node/.openclaw
+      - ./instances/y/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-y:
+        condition: service_healthy
+    profiles: ["cli"]
+
+  # ============================================================
+  # Instance Z — ports 42600/42601
+  # ============================================================
+  openclaw-z:
+    <<: *openclaw-common
+    container_name: openclaw-z
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_Z_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      TELEGRAM_BOT_TOKEN: ${OPENCLAW_Z_TELEGRAM_BOT_TOKEN:-}
+      DISCORD_BOT_TOKEN: ${OPENCLAW_Z_DISCORD_BOT_TOKEN:-}
+      SLACK_BOT_TOKEN: ${OPENCLAW_Z_SLACK_BOT_TOKEN:-}
+      SLACK_APP_TOKEN: ${OPENCLAW_Z_SLACK_APP_TOKEN:-}
+      OPENAI_API_KEY: ${OPENCLAW_Z_OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${OPENCLAW_Z_ANTHROPIC_API_KEY:-}
+    volumes:
+      - ./instances/z/config:/home/node/.openclaw
+      - ./instances/z/workspace:/home/node/.openclaw/workspace
+    ports:
+      - "${OPENCLAW_Z_GATEWAY_PORT:-42600}:18789"
+      - "${OPENCLAW_Z_BRIDGE_PORT:-42601}:18790"
+    command:
+      [
+        "node", "dist/index.js", "gateway",
+        "--bind", "${OPENCLAW_Z_GATEWAY_BIND:-lan}",
+        "--port", "18789",
+      ]
+    healthcheck:
+      <<: *healthcheck
+      test:
+        [
+          "CMD", "node", "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  openclaw-z-cli:
+    <<: *openclaw-common
+    container_name: openclaw-z-cli
+    network_mode: "service:openclaw-z"
+    restart: "no"
+    cap_drop: [NET_RAW, NET_ADMIN]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_Z_GATEWAY_TOKEN}
+      TZ: ${TZ:-UTC}
+      BROWSER: echo
+    volumes:
+      - ./instances/z/config:/home/node/.openclaw
+      - ./instances/z/workspace:/home/node/.openclaw/workspace
+    stdin_open: true
+    tty: true
+    entrypoint: ["node", "dist/index.js"]
+    depends_on:
+      openclaw-z:
+        condition: service_healthy
+    profiles: ["cli"]
