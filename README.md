@@ -41,7 +41,8 @@ deploy-multi-openclaw/
 ├── docker-compose.yaml      # 26 个实例的服务定义（A–Z）
 ├── .env.example             # 环境变量模板
 ├── .env                     # 实际配置（git ignored）
-├── setup.sh                 # 一键初始化脚本
+├── init-setup.sh            # 一键初始化脚本(第一次使用)
+├── init-container.sh        # 给所有容器node用户sudo权限
 ├── README.md
 └── instances/               # setup.sh 自动创建
     ├── a/
